@@ -154,7 +154,7 @@ const OvertimeRequestForm = ({ onSuccess }: OvertimeRequestFormProps) => {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => date > new Date() || date < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
                         initialFocus
                         className="p-3 pointer-events-auto"
                       />
