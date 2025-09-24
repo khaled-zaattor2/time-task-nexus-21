@@ -2,6 +2,17 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -238,16 +249,33 @@ const AttendanceTracker = () => {
                 {actionLoading ? "Checking In..." : "Check In"}
               </Button>
             ) : !todayAttendance?.check_out_time ? (
-              <Button 
-                onClick={handleCheckOut} 
-                disabled={actionLoading}
-                variant="destructive"
-                className="w-full"
-                size="lg"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                {actionLoading ? "Checking Out..." : "Check Out"}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    disabled={actionLoading}
+                    variant="destructive"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {actionLoading ? "Checking Out..." : "Check Out"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Check Out</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to check out? This will end your work session for today.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCheckOut}>
+                      Yes, Check Out
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             ) : (
               <div className="text-center p-4 bg-muted rounded-lg">
                 <p className="text-muted-foreground">
