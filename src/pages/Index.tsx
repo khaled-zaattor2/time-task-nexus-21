@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/layout/Navigation";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import TeamAttendance from "@/components/attendance/TeamAttendance";
+import UserManagement from "@/components/users/UserManagement";
 import Overtime from "./Overtime";
 import OvertimeApproval from "@/components/overtime/OvertimeApproval";
 
@@ -49,7 +50,7 @@ const Index = () => {
       case "projects":
         return <div className="p-6">Project management coming soon...</div>;
       case "users":
-        return <div className="p-6">User management coming soon...</div>;
+        return <UserManagement />;
       case "settings":
         return <div className="p-6">Settings coming soon...</div>;
       case "profile":
