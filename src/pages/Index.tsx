@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/layout/Navigation";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
+import TeamAttendance from "@/components/attendance/TeamAttendance";
 import Overtime from "./Overtime";
 import OvertimeApproval from "@/components/overtime/OvertimeApproval";
 
@@ -44,7 +45,7 @@ const Index = () => {
       case "dashboard":
         return <div className="p-6">Admin dashboard coming soon...</div>;
       case "team-attendance":
-        return <div className="p-6">Team attendance coming soon...</div>;
+        return <TeamAttendance />;
       case "projects":
         return <div className="p-6">Project management coming soon...</div>;
       case "users":
