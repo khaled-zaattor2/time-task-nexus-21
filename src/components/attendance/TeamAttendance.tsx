@@ -56,8 +56,7 @@ const TeamAttendance = () => {
           profiles!inner(full_name, email)
         `)
         .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
-        .order('profiles.full_name', { ascending: true });
+        .lte('date', endDate.toISOString().split('T')[0]);
 
       if (error) throw error;
       
@@ -67,6 +66,9 @@ const TeamAttendance = () => {
         full_name: record.profiles.full_name,
         email: record.profiles.email,
       }));
+      
+      // Sort by employee name
+      transformedData.sort((a, b) => a.full_name.localeCompare(b.full_name));
       
       setAttendanceRecords(transformedData);
     } catch (error) {
