@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -46,26 +46,36 @@ const TeamAttendance = () => {
 
     try {
       setLoading(true);
-      const startDate = startOfDay(selectedDate);
-      const endDate = endOfDay(selectedDate);
 
-      const { data, error } = await supabase
+      const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
-        .select(`
-          *,
-          profiles!inner(full_name, email)
-        `)
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0]);
+        .select('*')
+        .eq('date', dateString);
 
-      if (error) throw error;
+      if (attendanceError) throw attendanceError;
+
+      const userIds = Array.from(new Set((attendanceData ?? []).map((r: any) => r.user_id))).filter(Boolean);
+
+      let profilesMap = new Map<string, { full_name: string; email: string }>();
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email')
+          .in('user_id', userIds as string[]);
+        if (profilesError) throw profilesError;
+        profilesMap = new Map((profilesData ?? []).map((p: any) => [p.user_id, { full_name: p.full_name, email: p.email }]));
+      }
       
-      // Transform the data to match our interface
-      const transformedData = (data || []).map((record: any) => ({
-        ...record,
-        full_name: record.profiles.full_name,
-        email: record.profiles.email,
-      }));
+      const transformedData = (attendanceData || []).map((record: any) => {
+        const profile = profilesMap.get(record.user_id) || { full_name: 'Unknown', email: '' };
+        return {
+          ...record,
+          full_name: profile.full_name,
+          email: profile.email,
+        } as TeamAttendanceRecord;
+      });
       
       // Sort by employee name
       transformedData.sort((a, b) => a.full_name.localeCompare(b.full_name));
