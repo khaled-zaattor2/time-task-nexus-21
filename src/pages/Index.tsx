@@ -6,6 +6,7 @@ import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import TeamAttendance from "@/components/attendance/TeamAttendance";
 import UserManagement from "@/components/users/UserManagement";
 import ProjectManagement from "@/components/projects/ProjectManagement";
+import TaskManagement from "@/components/tasks/TaskManagement";
 import Overtime from "./Overtime";
 import OvertimeApproval from "@/components/overtime/OvertimeApproval";
 
@@ -43,7 +44,7 @@ const Index = () => {
       case "overtime-approval":
         return <OvertimeApproval />;
       case "tasks":
-        return <div className="p-6">Tasks coming soon...</div>;
+        return <TaskManagement />;
       case "dashboard":
         return <div className="p-6">Admin dashboard coming soon...</div>;
       case "team-attendance":
