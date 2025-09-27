@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarIcon, Users, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarIcon, Users, Clock, TrendingUp, TrendingDown, Settings, Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
 
 interface MonthlyAttendanceData {
@@ -28,6 +32,39 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState({
+    employee_name: true,
+    employee_email: true,
+    total_working_days: true,
+    days_present: true,
+    days_absent: true,
+    days_late: true,
+    total_hours: true,
+    attendance_rate: true,
+    status: true
+  });
+
+  // Column definitions
+  const columns = [
+    { key: 'employee_name', label: 'Employee', required: true },
+    { key: 'employee_email', label: 'Email' },
+    { key: 'total_working_days', label: 'Working Days' },
+    { key: 'days_present', label: 'Present' },
+    { key: 'days_absent', label: 'Absent' },
+    { key: 'days_late', label: 'Late' },
+    { key: 'total_hours', label: 'Total Hours' },
+    { key: 'attendance_rate', label: 'Attendance Rate' },
+    { key: 'status', label: 'Status' }
+  ];
+
+  const toggleColumnVisibility = (columnKey: string) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey as keyof typeof prev]
+    }));
+  };
 
   useEffect(() => {
     if (user) {
@@ -206,31 +243,33 @@ const Dashboard = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Select
-            value={format(selectedMonth, 'yyyy-MM')}
-            onValueChange={(value) => {
-              const [year, month] = value.split('-');
-              setSelectedMonth(new Date(parseInt(year), parseInt(month) - 1, 1));
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 12 }, (_, i) => {
-                const date = new Date();
-                date.setMonth(date.getMonth() - i);
-                const value = format(date, 'yyyy-MM');
-                const label = format(date, 'MMMM yyyy');
-                return (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+          {/* Month Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(selectedMonth, "MMMM yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedMonth}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedMonth(date);
+                  }
+                }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           
           <Button onClick={fetchMonthlyAttendanceData} variant="outline">
             Refresh
@@ -290,50 +329,108 @@ const Dashboard = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Monthly Attendance Report - {format(selectedMonth, 'MMMM yyyy')}</CardTitle>
-            <Input
-              placeholder="Search employees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+            <div className="flex items-center space-x-4">
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              
+              {/* Column Visibility Control */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Columns
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56" align="end">
+                  <div className="space-y-3">
+                    <div className="font-medium text-sm">Show/Hide Columns</div>
+                    {columns.map((column) => (
+                      <div key={column.key} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={column.key}
+                          checked={visibleColumns[column.key as keyof typeof visibleColumns]}
+                          onCheckedChange={() => toggleColumnVisibility(column.key)}
+                          disabled={column.required}
+                        />
+                        <label
+                          htmlFor={column.key}
+                          className={cn(
+                            "text-sm font-normal cursor-pointer",
+                            column.required && "text-muted-foreground"
+                          )}
+                        >
+                          {column.label}
+                          {column.required && " (Required)"}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="text-center">Working Days</TableHead>
-                <TableHead className="text-center">Present</TableHead>
-                <TableHead className="text-center">Absent</TableHead>
-                <TableHead className="text-center">Late</TableHead>
-                <TableHead className="text-center">Total Hours</TableHead>
-                <TableHead className="text-center">Attendance Rate</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                {visibleColumns.employee_name && <TableHead>Employee</TableHead>}
+                {visibleColumns.employee_email && <TableHead>Email</TableHead>}
+                {visibleColumns.total_working_days && <TableHead className="text-center">Working Days</TableHead>}
+                {visibleColumns.days_present && <TableHead className="text-center">Present</TableHead>}
+                {visibleColumns.days_absent && <TableHead className="text-center">Absent</TableHead>}
+                {visibleColumns.days_late && <TableHead className="text-center">Late</TableHead>}
+                {visibleColumns.total_hours && <TableHead className="text-center">Total Hours</TableHead>}
+                {visibleColumns.attendance_rate && <TableHead className="text-center">Attendance Rate</TableHead>}
+                {visibleColumns.status && <TableHead className="text-center">Status</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell 
+                    colSpan={Object.values(visibleColumns).filter(Boolean).length} 
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     No attendance data found for {format(selectedMonth, 'MMMM yyyy')}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredData.map((employee) => (
                   <TableRow key={employee.user_id}>
-                    <TableCell className="font-medium">{employee.employee_name}</TableCell>
-                    <TableCell>{employee.employee_email}</TableCell>
-                    <TableCell className="text-center">{employee.total_working_days}</TableCell>
-                    <TableCell className="text-center">{employee.days_present}</TableCell>
-                    <TableCell className="text-center">{employee.days_absent}</TableCell>
-                    <TableCell className="text-center">{employee.days_late}</TableCell>
-                    <TableCell className="text-center">{employee.total_hours.toFixed(1)}</TableCell>
-                    <TableCell className="text-center">{employee.attendance_rate.toFixed(1)}%</TableCell>
-                    <TableCell className="text-center">
-                      {getAttendanceRateBadge(employee.attendance_rate)}
-                    </TableCell>
+                    {visibleColumns.employee_name && (
+                      <TableCell className="font-medium">{employee.employee_name}</TableCell>
+                    )}
+                    {visibleColumns.employee_email && (
+                      <TableCell>{employee.employee_email}</TableCell>
+                    )}
+                    {visibleColumns.total_working_days && (
+                      <TableCell className="text-center">{employee.total_working_days}</TableCell>
+                    )}
+                    {visibleColumns.days_present && (
+                      <TableCell className="text-center">{employee.days_present}</TableCell>
+                    )}
+                    {visibleColumns.days_absent && (
+                      <TableCell className="text-center">{employee.days_absent}</TableCell>
+                    )}
+                    {visibleColumns.days_late && (
+                      <TableCell className="text-center">{employee.days_late}</TableCell>
+                    )}
+                    {visibleColumns.total_hours && (
+                      <TableCell className="text-center">{employee.total_hours.toFixed(1)}</TableCell>
+                    )}
+                    {visibleColumns.attendance_rate && (
+                      <TableCell className="text-center">{employee.attendance_rate.toFixed(1)}%</TableCell>
+                    )}
+                    {visibleColumns.status && (
+                      <TableCell className="text-center">
+                        {getAttendanceRateBadge(employee.attendance_rate)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
