@@ -37,8 +37,26 @@ export default function TaskManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      setIsAdmin(profile?.role === 'admin');
+    };
+    
+    checkAdmin();
+  }, [user]);
 
   const fetchTasks = async () => {
     try {
@@ -170,28 +188,32 @@ export default function TaskManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Task Management</h1>
-          <p className="text-muted-foreground">Manage and track project tasks</p>
+          <p className="text-muted-foreground">
+            {isAdmin ? "Manage and track project tasks" : "View your assigned tasks"}
+          </p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setSelectedTask(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedTask ? 'Edit Task' : 'Add New Task'}
-              </DialogTitle>
-            </DialogHeader>
-            <TaskForm
-              task={selectedTask}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {isAdmin && (
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedTask(null)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedTask ? 'Edit Task' : 'Add New Task'}
+                </DialogTitle>
+              </DialogHeader>
+              <TaskForm
+                task={selectedTask}
+                onSuccess={handleFormSuccess}
+                onCancel={() => setIsFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Task Statistics */}
@@ -307,40 +329,45 @@ export default function TaskManagement() {
                       <TableCell>{task.created_by_name}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setIsFormOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4" />
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setIsFormOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Task</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{task.title}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete "{task.title}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteTask(task.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                          {!isAdmin && <span className="text-sm text-muted-foreground">-</span>}
                         </div>
                       </TableCell>
                     </TableRow>
