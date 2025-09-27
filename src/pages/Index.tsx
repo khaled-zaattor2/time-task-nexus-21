@@ -9,6 +9,7 @@ import ProjectManagement from "@/components/projects/ProjectManagement";
 import TaskManagement from "@/components/tasks/TaskManagement";
 import Overtime from "./Overtime";
 import OvertimeApproval from "@/components/overtime/OvertimeApproval";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -46,7 +47,7 @@ const Index = () => {
       case "tasks":
         return <TaskManagement />;
       case "dashboard":
-        return <div className="p-6">Admin dashboard coming soon...</div>;
+        return <Dashboard />;
       case "team-attendance":
         return <TeamAttendance />;
       case "projects":
