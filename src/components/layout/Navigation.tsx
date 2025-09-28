@@ -39,6 +39,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const adminNavItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "team-attendance", label: "Team Attendance", icon: Clock },
+    { id: "tasks", label: "Task Management", icon: CheckSquare },
     { id: "projects", label: "Projects", icon: FileText },
     { id: "users", label: "Users", icon: Users },
     { id: "overtime-approval", label: "Overtime Approval", icon: Calendar },
