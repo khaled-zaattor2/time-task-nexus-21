@@ -38,6 +38,7 @@ export default function TaskManagement() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [assignmentMode, setAssignmentMode] = useState<'admin_assign' | 'self_assign'>('admin_assign');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -192,28 +193,58 @@ export default function TaskManagement() {
             {isAdmin ? "Manage and track project tasks" : "View your assigned tasks"}
           </p>
         </div>
-        {isAdmin && (
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setSelectedTask(null)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Task
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {selectedTask ? 'Edit Task' : 'Add New Task'}
-                </DialogTitle>
-              </DialogHeader>
-              <TaskForm
-                task={selectedTask}
-                onSuccess={handleFormSuccess}
-                onCancel={() => setIsFormOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  setSelectedTask(null);
+                  setAssignmentMode('admin_assign');
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Assign Task to Employee
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {selectedTask ? 'Edit Task' : 'Assign Task to Employee'}
+                  </DialogTitle>
+                </DialogHeader>
+                <TaskForm
+                  task={selectedTask}
+                  assignmentMode={assignmentMode}
+                  onSuccess={handleFormSuccess}
+                  onCancel={() => setIsFormOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+          {!isAdmin && (
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  setSelectedTask(null);
+                  setAssignmentMode('self_assign');
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Task for Myself
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create Task for Myself</DialogTitle>
+                </DialogHeader>
+                <TaskForm
+                  task={selectedTask}
+                  assignmentMode={assignmentMode}
+                  onSuccess={handleFormSuccess}
+                  onCancel={() => setIsFormOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {/* Task Statistics */}
@@ -336,6 +367,7 @@ export default function TaskManagement() {
                                 size="sm"
                                 onClick={() => {
                                   setSelectedTask(task);
+                                  setAssignmentMode('admin_assign');
                                   setIsFormOpen(true);
                                 }}
                               >

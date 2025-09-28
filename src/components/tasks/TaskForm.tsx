@@ -33,11 +33,12 @@ interface Task {
 
 interface TaskFormProps {
   task?: Task | null;
+  assignmentMode?: 'admin_assign' | 'self_assign';
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export default function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
+export default function TaskForm({ task, assignmentMode = 'admin_assign', onSuccess, onCancel }: TaskFormProps) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -89,7 +90,7 @@ export default function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
     loadData();
   }, [toast]);
 
-  // Populate form when editing
+  // Populate form when editing or set self-assignment
   useEffect(() => {
     if (task) {
       setFormData({
@@ -102,8 +103,14 @@ export default function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         actual_hours: task.actual_hours?.toString() || "",
         due_date: task.due_date || "",
       });
+    } else if (assignmentMode === 'self_assign' && user) {
+      // Pre-populate assigned_to with current user for self-assignment
+      setFormData(prev => ({
+        ...prev,
+        assigned_to: user.id,
+      }));
     }
-  }, [task]);
+  }, [task, assignmentMode, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,16 +218,32 @@ export default function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
 
           <div>
             <Label htmlFor="assigned_to">Assigned To *</Label>
-            <Select value={formData.assigned_to} onValueChange={(value) => handleInputChange('assigned_to', value)}>
+            <Select 
+              value={formData.assigned_to} 
+              onValueChange={(value) => handleInputChange('assigned_to', value)}
+              disabled={assignmentMode === 'self_assign'}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select user" />
+                <SelectValue placeholder={assignmentMode === 'self_assign' ? "Assigned to yourself" : "Select user"} />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.user_id} value={user.user_id}>
-                    {user.full_name}
-                  </SelectItem>
-                ))}
+                {assignmentMode === 'self_assign' ? (
+                  // Show only current user for self-assignment
+                  users
+                    .filter(u => u.user_id === user?.id)
+                    .map((userItem) => (
+                      <SelectItem key={userItem.user_id} value={userItem.user_id}>
+                        {userItem.full_name}
+                      </SelectItem>
+                    ))
+                ) : (
+                  // Show all users for admin assignment
+                  users.map((userItem) => (
+                    <SelectItem key={userItem.user_id} value={userItem.user_id}>
+                      {userItem.full_name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
