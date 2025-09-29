@@ -1,0 +1,383 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Building,
+  Clock,
+  Bell,
+  Shield,
+  Save,
+  Users,
+  Calendar,
+  Settings as SettingsIcon,
+} from "lucide-react";
+
+const Settings = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  // Company Settings State
+  const [companyName, setCompanyName] = useState("AttendanceHub Inc.");
+  const [workingHours, setWorkingHours] = useState({
+    start: "09:00",
+    end: "17:00",
+  });
+  const [timezone, setTimezone] = useState("UTC");
+
+  // Notification Settings State
+  const [notifications, setNotifications] = useState({
+    emailAlerts: true,
+    tardyAlerts: true,
+    overtimeAlerts: true,
+    weeklyReports: false,
+  });
+
+  // Security Settings State
+  const [security, setSecurity] = useState({
+    sessionTimeout: "8",
+    requirePasswordChange: false,
+    twoFactorAuth: false,
+  });
+
+  const handleSaveSettings = async (section: string) => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Settings Saved",
+        description: `${section} settings have been updated successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-2">
+        <SettingsIcon className="h-6 w-6" />
+        <h1 className="text-2xl font-bold">System Settings</h1>
+        <Badge variant="secondary">Admin Only</Badge>
+      </div>
+
+      <Tabs defaultValue="company" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="company" className="flex items-center space-x-2">
+            <Building className="h-4 w-4" />
+            <span>Company</span>
+          </TabsTrigger>
+          <TabsTrigger value="work-hours" className="flex items-center space-x-2">
+            <Clock className="h-4 w-4" />
+            <span>Work Hours</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center space-x-2">
+            <Bell className="h-4 w-4" />
+            <span>Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center space-x-2">
+            <Shield className="h-4 w-4" />
+            <span>Security</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="company">
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Information</CardTitle>
+              <CardDescription>
+                Manage your organization's basic information and settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input
+                    id="company-name"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Enter company name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Default Timezone</Label>
+                  <Select value={timezone} onValueChange={setTimezone}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UTC">UTC</SelectItem>
+                      <SelectItem value="EST">Eastern Standard Time</SelectItem>
+                      <SelectItem value="PST">Pacific Standard Time</SelectItem>
+                      <SelectItem value="CST">Central Standard Time</SelectItem>
+                      <SelectItem value="MST">Mountain Standard Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <Button 
+                onClick={() => handleSaveSettings("Company")}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Company Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="work-hours">
+          <Card>
+            <CardHeader>
+              <CardTitle>Work Hours Configuration</CardTitle>
+              <CardDescription>
+                Set default working hours and attendance policies.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-time">Start Time</Label>
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={workingHours.start}
+                      onChange={(e) => setWorkingHours(prev => ({
+                        ...prev,
+                        start: e.target.value
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end-time">End Time</Label>
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={workingHours.end}
+                      onChange={(e) => setWorkingHours(prev => ({
+                        ...prev,
+                        end: e.target.value
+                      }))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Clock className="h-4 w-4" />
+                    <span className="font-medium">Current Schedule</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Standard work day: {workingHours.start} - {workingHours.end}
+                    ({((parseInt(workingHours.end.split(':')[0]) * 60 + parseInt(workingHours.end.split(':')[1])) - (parseInt(workingHours.start.split(':')[0]) * 60 + parseInt(workingHours.start.split(':')[1]))) / 60} hours)
+                  </p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <Button 
+                onClick={() => handleSaveSettings("Work Hours")}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Work Hours
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>
+                Configure system notifications and alerts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Email Alerts</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Send email notifications for important events
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.emailAlerts}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, emailAlerts: checked }))
+                    }
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Tardy Alerts</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Alert managers when employees are late
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.tardyAlerts}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, tardyAlerts: checked }))
+                    }
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Overtime Alerts</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Notify about overtime requests and approvals
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.overtimeAlerts}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, overtimeAlerts: checked }))
+                    }
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Weekly Reports</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Send weekly attendance summary reports
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.weeklyReports}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, weeklyReports: checked }))
+                    }
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <Button 
+                onClick={() => handleSaveSettings("Notifications")}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Notification Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle>Security Settings</CardTitle>
+              <CardDescription>
+                Manage security policies and authentication settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="session-timeout">Session Timeout (hours)</Label>
+                  <Select 
+                    value={security.sessionTimeout} 
+                    onValueChange={(value) => 
+                      setSecurity(prev => ({ ...prev, sessionTimeout: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select timeout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 hour</SelectItem>
+                      <SelectItem value="4">4 hours</SelectItem>
+                      <SelectItem value="8">8 hours</SelectItem>
+                      <SelectItem value="24">24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Require Password Change</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Force users to change password every 90 days
+                    </p>
+                  </div>
+                  <Switch
+                    checked={security.requirePasswordChange}
+                    onCheckedChange={(checked) => 
+                      setSecurity(prev => ({ ...prev, requirePasswordChange: checked }))
+                    }
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Two-Factor Authentication</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Require 2FA for all admin accounts
+                    </p>
+                  </div>
+                  <Switch
+                    checked={security.twoFactorAuth}
+                    onCheckedChange={(checked) => 
+                      setSecurity(prev => ({ ...prev, twoFactorAuth: checked }))
+                    }
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <Button 
+                onClick={() => handleSaveSettings("Security")}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Security Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default Settings;

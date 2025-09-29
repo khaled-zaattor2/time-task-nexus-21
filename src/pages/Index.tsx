@@ -10,6 +10,7 @@ import TaskManagement from "@/components/tasks/TaskManagement";
 import Overtime from "./Overtime";
 import OvertimeApproval from "@/components/overtime/OvertimeApproval";
 import Dashboard from "@/components/dashboard/Dashboard";
+import Settings from "@/components/settings/Settings";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -55,7 +56,7 @@ const Index = () => {
       case "users":
         return <UserManagement />;
       case "settings":
-        return <div className="p-6">Settings coming soon...</div>;
+        return <Settings />;
       case "profile":
         return <div className="p-6">Profile management coming soon...</div>;
       default:
