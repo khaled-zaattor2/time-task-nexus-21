@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -24,7 +26,9 @@ import {
   Users,
   Calendar,
   Settings as SettingsIcon,
+  X,
 } from "lucide-react";
+import { format } from "date-fns";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -37,6 +41,21 @@ const Settings = () => {
     end: "17:00",
   });
   const [timezone, setTimezone] = useState("UTC");
+  
+  // Working Days State
+  const [workingDays, setWorkingDays] = useState({
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true,
+    saturday: false,
+    sunday: false,
+  });
+
+  // Holidays State
+  const [holidays, setHolidays] = useState<Date[]>([]);
+  const [selectedHoliday, setSelectedHoliday] = useState<Date | undefined>();
 
   // Notification Settings State
   const [notifications, setNotifications] = useState({
@@ -83,7 +102,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="company" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
             <span>Company</span>
@@ -91,6 +110,10 @@ const Settings = () => {
           <TabsTrigger value="work-hours" className="flex items-center space-x-2">
             <Clock className="h-4 w-4" />
             <span>Work Hours</span>
+          </TabsTrigger>
+          <TabsTrigger value="holidays" className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4" />
+            <span>Holidays</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center space-x-2">
             <Bell className="h-4 w-4" />
@@ -190,6 +213,26 @@ const Settings = () => {
                   </div>
                 </div>
                 
+                <div className="space-y-2">
+                  <Label>Working Days</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(workingDays).map(([day, checked]) => (
+                      <div key={day} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={day}
+                          checked={checked}
+                          onCheckedChange={(checked) =>
+                            setWorkingDays((prev) => ({ ...prev, [day]: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor={day} className="capitalize cursor-pointer">
+                          {day}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
                     <Clock className="h-4 w-4" />
@@ -198,6 +241,12 @@ const Settings = () => {
                   <p className="text-sm text-muted-foreground">
                     Standard work day: {workingHours.start} - {workingHours.end}
                     ({((parseInt(workingHours.end.split(':')[0]) * 60 + parseInt(workingHours.end.split(':')[1])) - (parseInt(workingHours.start.split(':')[0]) * 60 + parseInt(workingHours.start.split(':')[1]))) / 60} hours)
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Working days: {Object.entries(workingDays)
+                      .filter(([_, checked]) => checked)
+                      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1))
+                      .join(", ")}
                   </p>
                 </div>
               </div>
@@ -211,6 +260,99 @@ const Settings = () => {
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save Work Hours
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="holidays">
+          <Card>
+            <CardHeader>
+              <CardTitle>Holiday Management</CardTitle>
+              <CardDescription>
+                Manage company holidays and non-working days.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <Label>Select Holiday Date</Label>
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedHoliday}
+                    onSelect={setSelectedHoliday}
+                    className="rounded-md border"
+                  />
+                  <Button
+                    onClick={() => {
+                      if (selectedHoliday && !holidays.some(h => h.getTime() === selectedHoliday.getTime())) {
+                        setHolidays([...holidays, selectedHoliday]);
+                        setSelectedHoliday(undefined);
+                        toast({
+                          title: "Holiday Added",
+                          description: `${format(selectedHoliday, "PPP")} has been added to holidays.`,
+                        });
+                      }
+                    }}
+                    disabled={!selectedHoliday}
+                    className="w-full"
+                  >
+                    Add Holiday
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Scheduled Holidays ({holidays.length})</Label>
+                  <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto">
+                    {holidays.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        No holidays scheduled
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {holidays
+                          .sort((a, b) => a.getTime() - b.getTime())
+                          .map((holiday, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Calendar className="h-4 w-4" />
+                                <span className="text-sm font-medium">
+                                  {format(holiday, "PPP")}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setHolidays(holidays.filter((_, i) => i !== index));
+                                  toast({
+                                    title: "Holiday Removed",
+                                    description: `${format(holiday, "PPP")} has been removed.`,
+                                  });
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <Button
+                onClick={() => handleSaveSettings("Holidays")}
+                disabled={loading}
+                className="w-full"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Holiday Settings
               </Button>
             </CardContent>
           </Card>
