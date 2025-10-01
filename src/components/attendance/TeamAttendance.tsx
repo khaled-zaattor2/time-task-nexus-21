@@ -60,8 +60,9 @@ const TeamAttendance = () => {
 
       let profilesMap = new Map<string, { full_name: string; email: string }>();
       if (userIds.length > 0) {
+        // Use profiles_public view to safely access employee names/emails without exposing salary data
         const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('user_id, full_name, email')
           .in('user_id', userIds as string[]);
         if (profilesError) throw profilesError;

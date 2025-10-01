@@ -79,16 +79,16 @@ export default function TaskManagement() {
             .eq('id', task.project_id)
             .single();
 
-          // Get assigned user name
+          // Get assigned user name - use profiles_public to avoid RLS issues
           const { data: assignedUserData } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('full_name')
             .eq('user_id', task.assigned_to)
             .single();
 
-          // Get creator name
+          // Get creator name - use profiles_public to avoid RLS issues
           const { data: creatorData } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('full_name')
             .eq('user_id', task.created_by)
             .single();

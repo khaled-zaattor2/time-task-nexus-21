@@ -111,9 +111,9 @@ const Dashboard = () => {
       const workingDaysConfig = (companySettings?.working_days as string[]) || 
         ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
-      // Get all employees
+      // Get all employees - use profiles_public to avoid exposing salary data
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, full_name, email');
 
       if (!profiles) {

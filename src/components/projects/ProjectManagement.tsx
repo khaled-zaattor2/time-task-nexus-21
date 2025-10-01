@@ -49,9 +49,9 @@ export default function ProjectManagement() {
       // Get creator names and task counts
       const projectsWithDetails = await Promise.all(
         (projectsData || []).map(async (project) => {
-          // Get creator name
+          // Get creator name - use profiles_public to avoid RLS issues
           const { data: creatorData } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('full_name')
             .eq('user_id', project.created_by)
             .single();
