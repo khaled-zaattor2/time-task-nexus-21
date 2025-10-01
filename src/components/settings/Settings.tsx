@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import { format } from "date-fns";
 const Settings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
 
   // Company Settings State
   const [companyName, setCompanyName] = useState("AttendanceHub Inc.");
@@ -72,17 +74,102 @@ const Settings = () => {
     twoFactorAuth: false,
   });
 
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const { data: settings, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (settings) {
+        setSettingsId(settings.id);
+        
+        // Load working days from database
+        if (settings.working_days) {
+          const days = settings.working_days as string[];
+          setWorkingDays({
+            monday: days.includes('monday'),
+            tuesday: days.includes('tuesday'),
+            wednesday: days.includes('wednesday'),
+            thursday: days.includes('thursday'),
+            friday: days.includes('friday'),
+            saturday: days.includes('saturday'),
+            sunday: days.includes('sunday'),
+          });
+        }
+
+        // Load working hours
+        if (settings.daily_working_hours) {
+          const hours = Number(settings.daily_working_hours);
+          const startHour = 9; // Default start
+          const endHour = startHour + hours;
+          setWorkingHours({
+            start: `${startHour.toString().padStart(2, '0')}:00`,
+            end: `${endHour.toString().padStart(2, '0')}:00`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
   const handleSaveSettings = async (section: string) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (section === "Work Hours") {
+        // Convert working days object to array
+        const workingDaysArray = Object.entries(workingDays)
+          .filter(([_, isWorking]) => isWorking)
+          .map(([day]) => day);
+
+        // Calculate daily working hours
+        const startMinutes = parseInt(workingHours.start.split(':')[0]) * 60 + parseInt(workingHours.start.split(':')[1]);
+        const endMinutes = parseInt(workingHours.end.split(':')[0]) * 60 + parseInt(workingHours.end.split(':')[1]);
+        const dailyHours = (endMinutes - startMinutes) / 60;
+
+        if (settingsId) {
+          // Update existing settings
+          const { error } = await supabase
+            .from('company_settings')
+            .update({
+              working_days: workingDaysArray,
+              daily_working_hours: dailyHours,
+            })
+            .eq('id', settingsId);
+
+          if (error) throw error;
+        } else {
+          // Insert new settings
+          const { data, error } = await supabase
+            .from('company_settings')
+            .insert({
+              working_days: workingDaysArray,
+              daily_working_hours: dailyHours,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (data) setSettingsId(data.id);
+        }
+      }
       
       toast({
         title: "Settings Saved",
         description: `${section} settings have been updated successfully.`,
       });
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",

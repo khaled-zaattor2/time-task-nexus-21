@@ -102,6 +102,15 @@ const Dashboard = () => {
       const monthStart = startOfMonth(selectedMonth);
       const monthEnd = endOfMonth(selectedMonth);
 
+      // Get company settings for working days
+      const { data: companySettings } = await supabase
+        .from('company_settings')
+        .select('working_days')
+        .single();
+
+      const workingDaysConfig = (companySettings?.working_days as string[]) || 
+        ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
       // Get all employees
       const { data: profiles } = await supabase
         .from('profiles')
@@ -120,11 +129,15 @@ const Dashboard = () => {
         .gte('date', format(monthStart, 'yyyy-MM-dd'))
         .lte('date', format(monthEnd, 'yyyy-MM-dd'));
 
-      // Calculate working days in the month (excluding weekends)
+      // Calculate working days based on company settings
+      const dayNameMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const workingDaysInMonth = eachDayOfInterval({
         start: monthStart,
         end: monthEnd
-      }).filter(day => !isWeekend(day)).length;
+      }).filter(day => {
+        const dayName = dayNameMap[day.getDay()];
+        return workingDaysConfig.includes(dayName);
+      }).length;
 
       // Process data for each employee
       const processedData = profiles.map(profile => {
