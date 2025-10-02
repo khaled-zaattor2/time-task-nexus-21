@@ -20,9 +20,15 @@ export type Database = {
           check_out_time: string | null
           created_at: string
           date: string
+          early_departure_minutes: number | null
           id: string
           is_late: boolean | null
+          late_minutes: number | null
           overtime_hours: number | null
+          pay_cut_amount: number | null
+          pay_cut_approved: boolean | null
+          pay_cut_approved_at: string | null
+          pay_cut_approved_by: string | null
           regular_hours: number | null
           status: Database["public"]["Enums"]["attendance_status"]
           total_hours: number | null
@@ -34,9 +40,15 @@ export type Database = {
           check_out_time?: string | null
           created_at?: string
           date: string
+          early_departure_minutes?: number | null
           id?: string
           is_late?: boolean | null
+          late_minutes?: number | null
           overtime_hours?: number | null
+          pay_cut_amount?: number | null
+          pay_cut_approved?: boolean | null
+          pay_cut_approved_at?: string | null
+          pay_cut_approved_by?: string | null
           regular_hours?: number | null
           status?: Database["public"]["Enums"]["attendance_status"]
           total_hours?: number | null
@@ -48,9 +60,15 @@ export type Database = {
           check_out_time?: string | null
           created_at?: string
           date?: string
+          early_departure_minutes?: number | null
           id?: string
           is_late?: boolean | null
+          late_minutes?: number | null
           overtime_hours?: number | null
+          pay_cut_amount?: number | null
+          pay_cut_approved?: boolean | null
+          pay_cut_approved_at?: string | null
+          pay_cut_approved_by?: string | null
           regular_hours?: number | null
           status?: Database["public"]["Enums"]["attendance_status"]
           total_hours?: number | null
@@ -299,6 +317,14 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_pay_cut: {
+        Args: {
+          p_early_departure_minutes: number
+          p_hourly_rate: number
+          p_late_minutes: number
+        }
+        Returns: number
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
