@@ -26,6 +26,12 @@ interface TeamAttendanceRecord {
   is_late: boolean;
   full_name: string;
   email: string;
+  late_minutes: number | null;
+  early_departure_minutes: number | null;
+  pay_cut_amount: number | null;
+  pay_cut_approved: boolean;
+  pay_cut_approved_by: string | null;
+  pay_cut_approved_at: string | null;
 }
 
 const TeamAttendance = () => {
@@ -91,6 +97,35 @@ const TeamAttendance = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprovePayCut = async (attendanceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('attendance')
+        .update({
+          pay_cut_approved: true,
+          pay_cut_approved_by: user?.id,
+          pay_cut_approved_at: new Date().toISOString()
+        })
+        .eq('id', attendanceId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Pay cut approved successfully",
+      });
+
+      fetchTeamAttendance();
+    } catch (error) {
+      console.error('Error approving pay cut:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve pay cut",
+        variant: "destructive",
+      });
     }
   };
 
@@ -247,9 +282,10 @@ const TeamAttendance = () => {
                     <TableHead>Status</TableHead>
                     <TableHead>Check In</TableHead>
                     <TableHead>Check Out</TableHead>
-                    <TableHead>Regular Hours</TableHead>
-                    <TableHead>Overtime</TableHead>
+                    <TableHead>Violations</TableHead>
+                    <TableHead>Pay Cut</TableHead>
                     <TableHead>Total Hours</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -286,15 +322,36 @@ const TeamAttendance = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">
-                          {record.regular_hours ? `${record.regular_hours}h` : '—'}
-                        </span>
+                        {(record.late_minutes || record.early_departure_minutes) ? (
+                          <div className="space-y-1">
+                            {record.late_minutes > 0 && (
+                              <div className="text-xs text-destructive">
+                                Late: {record.late_minutes}m
+                              </div>
+                            )}
+                            {record.early_departure_minutes > 0 && (
+                              <div className="text-xs text-orange-600">
+                                Early: {record.early_departure_minutes}m
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {record.overtime_hours ? (
-                          <Badge variant="outline" className="text-blue-600">
-                            {record.overtime_hours}h
-                          </Badge>
+                        {record.pay_cut_amount && record.pay_cut_amount > 0 ? (
+                          <div className="space-y-1">
+                            <div className="text-sm font-bold text-destructive">
+                              ${record.pay_cut_amount.toFixed(2)}
+                            </div>
+                            <Badge 
+                              variant={record.pay_cut_approved ? "default" : "outline"}
+                              className="text-xs"
+                            >
+                              {record.pay_cut_approved ? "Approved" : "Pending"}
+                            </Badge>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -303,6 +360,19 @@ const TeamAttendance = () => {
                         <span className="font-semibold">
                           {record.total_hours ? `${record.total_hours}h` : '—'}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {record.pay_cut_amount && record.pay_cut_amount > 0 && !record.pay_cut_approved ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprovePayCut(record.id)}
+                            variant="outline"
+                          >
+                            Approve Cut
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
