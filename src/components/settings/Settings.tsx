@@ -81,6 +81,13 @@ const Settings = () => {
     secondPeriodRatio: 1.5,
   });
 
+  // Overtime Settings State
+  const [overtimeSettings, setOvertimeSettings] = useState({
+    firstPeriodHours: 2.0,
+    firstPeriodRatio: 1.25,
+    secondPeriodRatio: 1.5,
+  });
+
   // Load settings on mount
   useEffect(() => {
     loadSettings();
@@ -131,6 +138,13 @@ const Settings = () => {
           firstPeriodRatio: Number(settings.pay_cut_first_period_ratio ?? 1.0),
           secondPeriodRatio: Number(settings.pay_cut_second_period_ratio ?? 1.5),
         });
+
+        // Load overtime settings
+        setOvertimeSettings({
+          firstPeriodHours: Number(settings.overtime_first_period_hours ?? 2.0),
+          firstPeriodRatio: Number(settings.overtime_first_period_ratio ?? 1.25),
+          secondPeriodRatio: Number(settings.overtime_second_period_ratio ?? 1.5),
+        });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -161,6 +175,9 @@ const Settings = () => {
               pay_cut_first_period_minutes: payCutSettings.firstPeriodMinutes,
               pay_cut_first_period_ratio: payCutSettings.firstPeriodRatio,
               pay_cut_second_period_ratio: payCutSettings.secondPeriodRatio,
+              overtime_first_period_hours: overtimeSettings.firstPeriodHours,
+              overtime_first_period_ratio: overtimeSettings.firstPeriodRatio,
+              overtime_second_period_ratio: overtimeSettings.secondPeriodRatio,
             })
             .eq('id', settingsId);
 
@@ -175,6 +192,9 @@ const Settings = () => {
               pay_cut_first_period_minutes: payCutSettings.firstPeriodMinutes,
               pay_cut_first_period_ratio: payCutSettings.firstPeriodRatio,
               pay_cut_second_period_ratio: payCutSettings.secondPeriodRatio,
+              overtime_first_period_hours: overtimeSettings.firstPeriodHours,
+              overtime_first_period_ratio: overtimeSettings.firstPeriodRatio,
+              overtime_second_period_ratio: overtimeSettings.secondPeriodRatio,
             })
             .select()
             .single();
@@ -429,6 +449,83 @@ const Settings = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       • Beyond {payCutSettings.firstPeriodMinutes} minutes: charged at {payCutSettings.secondPeriodRatio}x rate
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Overtime Raise Policy</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Configure how overtime pay is calculated with different multipliers for different periods
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="overtime-first-period-hours">First Period Duration (hours)</Label>
+                    <Input
+                      id="overtime-first-period-hours"
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      value={overtimeSettings.firstPeriodHours}
+                      onChange={(e) => setOvertimeSettings(prev => ({
+                        ...prev,
+                        firstPeriodHours: parseFloat(e.target.value) || 2.0
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Overtime within this duration is paid at the first period ratio
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="overtime-first-ratio">First Period Ratio</Label>
+                      <Input
+                        id="overtime-first-ratio"
+                        type="number"
+                        step="0.05"
+                        min="1.0"
+                        value={overtimeSettings.firstPeriodRatio}
+                        onChange={(e) => setOvertimeSettings(prev => ({
+                          ...prev,
+                          firstPeriodRatio: parseFloat(e.target.value) || 1.25
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Multiplier for first {overtimeSettings.firstPeriodHours} hours (e.g., 1.25 = 125%)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="overtime-second-ratio">Second Period Ratio</Label>
+                      <Input
+                        id="overtime-second-ratio"
+                        type="number"
+                        step="0.05"
+                        min="1.0"
+                        value={overtimeSettings.secondPeriodRatio}
+                        onChange={(e) => setOvertimeSettings(prev => ({
+                          ...prev,
+                          secondPeriodRatio: parseFloat(e.target.value) || 1.5
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Multiplier after {overtimeSettings.firstPeriodHours} hours (e.g., 1.5 = 150%)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Example Calculation:</p>
+                    <p className="text-xs text-muted-foreground">
+                      • First {overtimeSettings.firstPeriodHours} hours of overtime: paid at {overtimeSettings.firstPeriodRatio}x rate
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      • Beyond {overtimeSettings.firstPeriodHours} hours: paid at {overtimeSettings.secondPeriodRatio}x rate
                     </p>
                   </div>
                 </div>
