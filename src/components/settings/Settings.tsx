@@ -74,6 +74,13 @@ const Settings = () => {
     twoFactorAuth: false,
   });
 
+  // Pay Cut Settings State
+  const [payCutSettings, setPayCutSettings] = useState({
+    firstPeriodMinutes: 60,
+    firstPeriodRatio: 1.0,
+    secondPeriodRatio: 1.5,
+  });
+
   // Load settings on mount
   useEffect(() => {
     loadSettings();
@@ -117,6 +124,13 @@ const Settings = () => {
             end: `${endHour.toString().padStart(2, '0')}:00`,
           });
         }
+
+        // Load pay cut settings
+        setPayCutSettings({
+          firstPeriodMinutes: settings.pay_cut_first_period_minutes ?? 60,
+          firstPeriodRatio: Number(settings.pay_cut_first_period_ratio ?? 1.0),
+          secondPeriodRatio: Number(settings.pay_cut_second_period_ratio ?? 1.5),
+        });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -144,6 +158,9 @@ const Settings = () => {
             .update({
               working_days: workingDaysArray,
               daily_working_hours: dailyHours,
+              pay_cut_first_period_minutes: payCutSettings.firstPeriodMinutes,
+              pay_cut_first_period_ratio: payCutSettings.firstPeriodRatio,
+              pay_cut_second_period_ratio: payCutSettings.secondPeriodRatio,
             })
             .eq('id', settingsId);
 
@@ -155,6 +172,9 @@ const Settings = () => {
             .insert({
               working_days: workingDaysArray,
               daily_working_hours: dailyHours,
+              pay_cut_first_period_minutes: payCutSettings.firstPeriodMinutes,
+              pay_cut_first_period_ratio: payCutSettings.firstPeriodRatio,
+              pay_cut_second_period_ratio: payCutSettings.secondPeriodRatio,
             })
             .select()
             .single();
@@ -335,6 +355,82 @@ const Settings = () => {
                       .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1))
                       .join(", ")}
                   </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Pay Cut Policy</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Configure how pay cuts are calculated for late arrivals and early departures
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="first-period-minutes">First Period Duration (minutes)</Label>
+                    <Input
+                      id="first-period-minutes"
+                      type="number"
+                      min="1"
+                      value={payCutSettings.firstPeriodMinutes}
+                      onChange={(e) => setPayCutSettings(prev => ({
+                        ...prev,
+                        firstPeriodMinutes: parseInt(e.target.value) || 60
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Violations within this duration are charged at the first period ratio
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first-ratio">First Period Ratio</Label>
+                      <Input
+                        id="first-ratio"
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={payCutSettings.firstPeriodRatio}
+                        onChange={(e) => setPayCutSettings(prev => ({
+                          ...prev,
+                          firstPeriodRatio: parseFloat(e.target.value) || 1.0
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Multiplier for first {payCutSettings.firstPeriodMinutes} minutes
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="second-ratio">Second Period Ratio</Label>
+                      <Input
+                        id="second-ratio"
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={payCutSettings.secondPeriodRatio}
+                        onChange={(e) => setPayCutSettings(prev => ({
+                          ...prev,
+                          secondPeriodRatio: parseFloat(e.target.value) || 1.5
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Multiplier after {payCutSettings.firstPeriodMinutes} minutes
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Example Calculation:</p>
+                    <p className="text-xs text-muted-foreground">
+                      • First {payCutSettings.firstPeriodMinutes} minutes of violation: charged at {payCutSettings.firstPeriodRatio}x rate
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      • Beyond {payCutSettings.firstPeriodMinutes} minutes: charged at {payCutSettings.secondPeriodRatio}x rate
+                    </p>
+                  </div>
                 </div>
               </div>
               
