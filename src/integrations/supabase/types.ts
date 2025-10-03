@@ -84,6 +84,9 @@ export type Database = {
           daily_working_hours: number
           id: string
           overtime_threshold: number
+          pay_cut_first_period_minutes: number | null
+          pay_cut_first_period_ratio: number | null
+          pay_cut_second_period_ratio: number | null
           updated_at: string
           working_days: Json
         }
@@ -93,6 +96,9 @@ export type Database = {
           daily_working_hours?: number
           id?: string
           overtime_threshold?: number
+          pay_cut_first_period_minutes?: number | null
+          pay_cut_first_period_ratio?: number | null
+          pay_cut_second_period_ratio?: number | null
           updated_at?: string
           working_days?: Json
         }
@@ -102,6 +108,9 @@ export type Database = {
           daily_working_hours?: number
           id?: string
           overtime_threshold?: number
+          pay_cut_first_period_minutes?: number | null
+          pay_cut_first_period_ratio?: number | null
+          pay_cut_second_period_ratio?: number | null
           updated_at?: string
           working_days?: Json
         }
