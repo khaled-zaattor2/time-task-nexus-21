@@ -66,13 +66,13 @@ const TeamAttendance = () => {
 
       let profilesMap = new Map<string, { full_name: string; email: string }>();
       if (userIds.length > 0) {
-        // Use profiles_public view to safely access employee names/emails without exposing salary data
+        // Use secure function to safely access employee names/emails without exposing salary data
         const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles_public')
-          .select('user_id, full_name, email')
-          .in('user_id', userIds as string[]);
+          .rpc('get_public_profiles');
         if (profilesError) throw profilesError;
-        profilesMap = new Map((profilesData ?? []).map((p: any) => [p.user_id, { full_name: p.full_name, email: p.email }]));
+        // Filter to only the users we need
+        const filteredProfiles = (profilesData ?? []).filter((p: any) => userIds.includes(p.user_id));
+        profilesMap = new Map(filteredProfiles.map((p: any) => [p.user_id, { full_name: p.full_name, email: p.email }]));
       }
       
       const transformedData = (attendanceData || []).map((record: any) => {

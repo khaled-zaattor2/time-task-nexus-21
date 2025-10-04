@@ -69,11 +69,9 @@ export default function TaskForm({ task, assignmentMode = 'admin_assign', onSucc
         if (projectsError) throw projectsError;
         setProjects(projectsData || []);
 
-        // Load users - use profiles_public view which only exposes non-sensitive data
+        // Load users - use secure function which only exposes non-sensitive data
         const { data: usersData, error: usersError } = await supabase
-          .from('profiles_public')
-          .select('user_id, full_name')
-          .order('full_name');
+          .rpc('get_public_profiles');
 
         if (usersError) throw usersError;
         setUsers(usersData || []);

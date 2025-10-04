@@ -79,19 +79,12 @@ export default function TaskManagement() {
             .eq('id', task.project_id)
             .single();
 
-          // Get assigned user name - use profiles_public to avoid RLS issues
-          const { data: assignedUserData } = await supabase
-            .from('profiles_public')
-            .select('full_name')
-            .eq('user_id', task.assigned_to)
-            .single();
-
-          // Get creator name - use profiles_public to avoid RLS issues
-          const { data: creatorData } = await supabase
-            .from('profiles_public')
-            .select('full_name')
-            .eq('user_id', task.created_by)
-            .single();
+          // Get user names - use secure function to avoid RLS issues
+          const { data: profilesData } = await supabase
+            .rpc('get_public_profiles');
+          
+          const assignedUserData = (profilesData ?? []).find((p: any) => p.user_id === task.assigned_to);
+          const creatorData = (profilesData ?? []).find((p: any) => p.user_id === task.created_by);
 
           return {
             ...task,
