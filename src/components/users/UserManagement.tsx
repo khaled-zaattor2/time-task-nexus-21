@@ -21,6 +21,7 @@ interface UserProfile {
   role: 'admin' | 'employee';
   base_salary: number | null;
   hourly_rate: number | null;
+  vacation_days: number | null;
   created_at: string;
   updated_at: string;
 }

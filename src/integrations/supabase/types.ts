@@ -196,6 +196,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
+          vacation_days: number | null
         }
         Insert: {
           base_salary?: number | null
@@ -207,6 +208,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
+          vacation_days?: number | null
         }
         Update: {
           base_salary?: number | null
@@ -218,6 +220,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
+          vacation_days?: number | null
         }
         Relationships: []
       }

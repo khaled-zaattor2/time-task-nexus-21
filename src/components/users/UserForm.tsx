@@ -18,6 +18,7 @@ const userFormSchema = z.object({
   }),
   base_salary: z.string().optional(),
   hourly_rate: z.string().optional(),
+  vacation_days: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters").optional(),
 });
 
@@ -31,6 +32,7 @@ interface UserProfile {
   role: 'admin' | 'employee';
   base_salary: number | null;
   hourly_rate: number | null;
+  vacation_days: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +54,7 @@ const UserForm = ({ user, onSuccess }: UserFormProps) => {
       role: user?.role || "employee",
       base_salary: user?.base_salary?.toString() || "",
       hourly_rate: user?.hourly_rate?.toString() || "",
+      vacation_days: user?.vacation_days?.toString() || "1",
       password: "",
     },
   });
@@ -67,6 +70,7 @@ const UserForm = ({ user, onSuccess }: UserFormProps) => {
           role: values.role,
           base_salary: values.base_salary ? parseFloat(values.base_salary) : null,
           hourly_rate: values.hourly_rate ? parseFloat(values.hourly_rate) : null,
+          vacation_days: values.vacation_days ? parseInt(values.vacation_days) : 1,
         };
 
         const { error } = await supabase
@@ -115,6 +119,7 @@ const UserForm = ({ user, onSuccess }: UserFormProps) => {
             role: values.role,
             base_salary: values.base_salary ? parseFloat(values.base_salary) : null,
             hourly_rate: values.hourly_rate ? parseFloat(values.hourly_rate) : null,
+            vacation_days: values.vacation_days ? parseInt(values.vacation_days) : 1,
           };
 
           const { error: profileError } = await supabase
@@ -239,6 +244,24 @@ const UserForm = ({ user, onSuccess }: UserFormProps) => {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="vacation_days"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vacation Days</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {!isEditing && (
           <FormField
