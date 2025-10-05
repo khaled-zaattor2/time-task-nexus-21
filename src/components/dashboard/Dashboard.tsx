@@ -13,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, Users, Clock, TrendingUp, TrendingDown, Settings, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TeamAttendance from "@/components/attendance/TeamAttendance";
 
 interface MonthlyAttendanceData {
   employee_name: string;
@@ -248,49 +250,54 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Monthly attendance overview for all employees</p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Month Picker */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedMonth, "MMMM yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedMonth}
-                onSelect={(date) => {
-                  if (date) {
-                    setSelectedMonth(date);
-                  }
-                }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Button onClick={fetchMonthlyAttendanceData} variant="outline">
-            Refresh
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Attendance overview and management</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="management">Manage Attendance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="flex items-center justify-end space-x-4">
+            {/* Month Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedMonth, "MMMM yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedMonth(date);
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Button onClick={fetchMonthlyAttendanceData} variant="outline">
+              Refresh
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -450,6 +457,12 @@ const Dashboard = () => {
           </Table>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="management">
+          <TeamAttendance />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
