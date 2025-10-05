@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { Users, Calendar as CalendarIcon, Clock, TrendingUp } from "lucide-react";
+import { Users, Calendar as CalendarIcon, Clock, TrendingUp, Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AdminAttendanceDialog from "./AdminAttendanceDialog";
 
 interface TeamAttendanceRecord {
   id: string;
@@ -40,6 +42,9 @@ const TeamAttendance = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<TeamAttendanceRecord | undefined>(undefined);
+  const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
@@ -124,6 +129,42 @@ const TeamAttendance = () => {
       toast({
         title: "Error",
         description: "Failed to approve pay cut",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddAttendance = () => {
+    setEditingRecord(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleEditAttendance = (record: TeamAttendanceRecord) => {
+    setEditingRecord(record);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteAttendance = async (attendanceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .eq('id', attendanceId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Attendance record deleted successfully",
+      });
+
+      fetchTeamAttendance();
+      setDeleteRecordId(null);
+    } catch (error) {
+      console.error('Error deleting attendance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete attendance record",
         variant: "destructive",
       });
     }
@@ -226,13 +267,21 @@ const TeamAttendance = () => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Attendance
-          </CardTitle>
-          <CardDescription>
-            Monitor team attendance for {format(selectedDate, 'MMMM dd, yyyy')}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Team Attendance
+              </CardTitle>
+              <CardDescription>
+                Monitor team attendance for {format(selectedDate, 'MMMM dd, yyyy')}
+              </CardDescription>
+            </div>
+            <Button onClick={handleAddAttendance}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Attendance
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -362,17 +411,49 @@ const TeamAttendance = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {record.pay_cut_amount && record.pay_cut_amount > 0 && !record.pay_cut_approved ? (
+                        <div className="flex items-center gap-2">
+                          {record.pay_cut_amount && record.pay_cut_amount > 0 && !record.pay_cut_approved && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprovePayCut(record.id)}
+                              variant="outline"
+                            >
+                              Approve Cut
+                            </Button>
+                          )}
                           <Button
                             size="sm"
-                            onClick={() => handleApprovePayCut(record.id)}
                             variant="outline"
+                            onClick={() => handleEditAttendance(record)}
                           >
-                            Approve Cut
+                            <Pencil className="h-3 w-3" />
                           </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
+                          <AlertDialog open={deleteRecordId === record.id} onOpenChange={(open) => !open && setDeleteRecordId(null)}>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setDeleteRecordId(record.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Attendance Record</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this attendance record for {record.full_name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteAttendance(record.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -382,6 +463,14 @@ const TeamAttendance = () => {
           )}
         </CardContent>
       </Card>
+
+      <AdminAttendanceDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={fetchTeamAttendance}
+        attendanceRecord={editingRecord}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 };
