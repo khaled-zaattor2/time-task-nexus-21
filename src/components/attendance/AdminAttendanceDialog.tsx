@@ -4,9 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AdminAttendanceDialogProps {
   open: boolean;
@@ -33,6 +37,7 @@ const AdminAttendanceDialog = ({
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [date, setDate] = useState<Date>(selectedDate);
   const [checkInTime, setCheckInTime] = useState("");
   const [checkOutTime, setCheckOutTime] = useState("");
   const [status, setStatus] = useState("present");
@@ -43,6 +48,7 @@ const AdminAttendanceDialog = ({
       if (attendanceRecord) {
         // Edit mode
         setSelectedUserId(attendanceRecord.user_id);
+        setDate(new Date(attendanceRecord.date));
         setCheckInTime(attendanceRecord.check_in_time ? format(new Date(attendanceRecord.check_in_time), "HH:mm") : "");
         setCheckOutTime(attendanceRecord.check_out_time ? format(new Date(attendanceRecord.check_out_time), "HH:mm") : "");
         setStatus(attendanceRecord.status);
@@ -51,7 +57,7 @@ const AdminAttendanceDialog = ({
         resetForm();
       }
     }
-  }, [open, attendanceRecord]);
+  }, [open, attendanceRecord, selectedDate]);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.rpc('get_public_profiles');
@@ -69,18 +75,19 @@ const AdminAttendanceDialog = ({
 
   const resetForm = () => {
     setSelectedUserId("");
+    setDate(selectedDate);
     setCheckInTime("");
     setCheckOutTime("");
     setStatus("present");
   };
 
   const calculateHoursAndPayCut = (checkIn: string, checkOut: string, hourlyRate: number | null) => {
-    const checkInDate = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${checkIn}`);
-    const checkOutDate = checkOut ? new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${checkOut}`) : null;
+    const checkInDate = new Date(`${format(date, 'yyyy-MM-dd')}T${checkIn}`);
+    const checkOutDate = checkOut ? new Date(`${format(date, 'yyyy-MM-dd')}T${checkOut}`) : null;
 
     // Calculate late minutes (assuming 9 AM start)
     const workStartHour = 9;
-    const todayWorkStart = new Date(selectedDate);
+    const todayWorkStart = new Date(date);
     todayWorkStart.setHours(workStartHour, 0, 0, 0);
     
     let lateMinutes = 0;
@@ -98,7 +105,7 @@ const AdminAttendanceDialog = ({
       
       // Calculate early departure (assuming 8-hour workday ending at 5 PM)
       const workEndHour = 17;
-      const todayWorkEnd = new Date(selectedDate);
+      const todayWorkEnd = new Date(date);
       todayWorkEnd.setHours(workEndHour, 0, 0, 0);
       
       if (checkOutDate < todayWorkEnd) {
@@ -152,9 +159,9 @@ const AdminAttendanceDialog = ({
 
       const attendanceData = {
         user_id: selectedUserId,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        check_in_time: `${format(selectedDate, 'yyyy-MM-dd')}T${checkInTime}:00`,
-        check_out_time: checkOutTime ? `${format(selectedDate, 'yyyy-MM-dd')}T${checkOutTime}:00` : null,
+        date: format(date, 'yyyy-MM-dd'),
+        check_in_time: `${format(date, 'yyyy-MM-dd')}T${checkInTime}:00`,
+        check_out_time: checkOutTime ? `${format(date, 'yyyy-MM-dd')}T${checkOutTime}:00` : null,
         status: status as "present" | "absent" | "late",
         is_late: calculations.isLate,
         late_minutes: calculations.lateMinutes,
@@ -244,12 +251,29 @@ const AdminAttendanceDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="text"
-              value={format(selectedDate, 'PPP')}
-              disabled
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(newDate) => newDate && setDate(newDate)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
