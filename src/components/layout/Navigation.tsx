@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
   Clock, 
   Calendar, 
@@ -18,9 +19,11 @@ import {
   LogOut,
   User,
   BarChart3,
-  FileText
+  FileText,
+  Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface NavigationProps {
   activeTab: string;
@@ -29,6 +32,7 @@ interface NavigationProps {
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const { user, profile, signOut, isAdmin } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const employeeNavItems = [
     { id: "attendance", label: "Attendance", icon: Clock },
@@ -85,6 +89,36 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="sm">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px]">
+                <nav className="flex flex-col space-y-2 mt-8">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Button
+                        key={item.id}
+                        variant={activeTab === item.id ? "default" : "ghost"}
+                        className="justify-start"
+                        onClick={() => {
+                          onTabChange(item.id);
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        <span>{item.label}</span>
+                      </Button>
+                    );
+                  })}
+                </nav>
+              </SheetContent>
+            </Sheet>
+
             <Badge variant={isAdmin ? "default" : "secondary"}>
               {profile?.role || "User"}
             </Badge>

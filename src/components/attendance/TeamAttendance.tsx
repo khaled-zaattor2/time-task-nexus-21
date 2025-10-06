@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -58,12 +58,15 @@ const TeamAttendance = () => {
     try {
       setLoading(true);
 
-      const dateString = format(selectedDate, 'yyyy-MM-dd');
+      const monthStart = format(startOfMonth(selectedDate), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(selectedDate), 'yyyy-MM-dd');
 
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('*')
-        .eq('date', dateString);
+        .gte('date', monthStart)
+        .lte('date', monthEnd)
+        .order('date', { ascending: false });
 
       if (attendanceError) throw attendanceError;
 
@@ -274,7 +277,7 @@ const TeamAttendance = () => {
                 Team Attendance
               </CardTitle>
               <CardDescription>
-                Monitor team attendance for {format(selectedDate, 'MMMM dd, yyyy')}
+                Monitor team attendance for {format(selectedDate, 'MMMM yyyy')}
               </CardDescription>
             </div>
             <Button onClick={handleAddAttendance}>
@@ -327,6 +330,7 @@ const TeamAttendance = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Date</TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Check In</TableHead>
@@ -340,6 +344,11 @@ const TeamAttendance = () => {
                 <TableBody>
                   {filteredRecords.map((record) => (
                     <TableRow key={record.id}>
+                      <TableCell>
+                        <div className="text-sm font-medium">
+                          {format(new Date(record.date), 'MMM dd')}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{record.full_name}</div>
