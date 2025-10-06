@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +20,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Clock, LogIn, LogOut, Timer } from "lucide-react";
-import { format } from "date-fns";
+import { Clock, LogIn, LogOut, Timer, Calendar as CalendarIcon } from "lucide-react";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 interface TodayAttendance {
   id?: string;
@@ -31,17 +35,39 @@ interface TodayAttendance {
   pay_cut_approved: boolean;
 }
 
+interface UserMonthlyRecord {
+  id: string;
+  date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  total_hours: number | null;
+  status: string;
+  is_late: boolean;
+  late_minutes: number | null;
+  early_departure_minutes: number | null;
+  pay_cut_amount: number | null;
+}
+
 const AttendanceTracker = () => {
   const { user } = useAuth();
   const [todayAttendance, setTodayAttendance] = useState<TodayAttendance | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [monthRecords, setMonthRecords] = useState<UserMonthlyRecord[]>([]);
+  const [monthLoading, setMonthLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchTodayAttendance();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchMonthlyAttendance();
+    }
+  }, [user, selectedMonth]);
 
   const fetchTodayAttendance = async () => {
     try {
@@ -73,6 +99,31 @@ const AttendanceTracker = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMonthlyAttendance = async () => {
+    if (!user) return;
+    try {
+      setMonthLoading(true);
+      const monthStart = startOfMonth(selectedMonth);
+      const monthEnd = endOfMonth(selectedMonth);
+
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('user_id', user?.id)
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'))
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setMonthRecords((data || []) as unknown as UserMonthlyRecord[]);
+    } catch (error) {
+      console.error('Error fetching monthly attendance:', error);
+      toast({ title: 'Error', description: 'Failed to load monthly attendance', variant: 'destructive' });
+    } finally {
+      setMonthLoading(false);
     }
   };
 
@@ -266,6 +317,11 @@ const AttendanceTracker = () => {
   const isCheckedIn = todayAttendance?.check_in_time && !todayAttendance?.check_out_time;
   const isCompleted = todayAttendance?.check_in_time && todayAttendance?.check_out_time;
 
+  const presentCount = monthRecords.filter((r) => r.status === 'present').length;
+  const absentCount = monthRecords.filter((r) => r.status === 'absent').length;
+  const lateCount = monthRecords.filter((r) => r.is_late).length;
+  const totalMonthHours = monthRecords.reduce((sum, r) => sum + (r.total_hours || 0), 0);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -398,6 +454,101 @@ const AttendanceTracker = () => {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CalendarIcon className="h-5 w-5" />
+            <span>Monthly Attendance</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedMonth, "MMMM yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(d) => d && setSelectedMonth(d)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex gap-6">
+              <div className="text-sm">
+                <div className="text-muted-foreground">Present</div>
+                <div className="font-bold">{presentCount}</div>
+              </div>
+              <div className="text-sm">
+                <div className="text-muted-foreground">Absent</div>
+                <div className="font-bold">{absentCount}</div>
+              </div>
+              <div className="text-sm">
+                <div className="text-muted-foreground">Late</div>
+                <div className="font-bold">{lateCount}</div>
+              </div>
+              <div className="text-sm">
+                <div className="text-muted-foreground">Total Hours</div>
+                <div className="font-bold">{totalMonthHours.toFixed(1)}</div>
+              </div>
+            </div>
+          </div>
+
+          {monthLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading monthly attendance...</div>
+          ) : monthRecords.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No attendance records found for {format(selectedMonth, 'MMMM yyyy')}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Check In</TableHead>
+                    <TableHead>Check Out</TableHead>
+                    <TableHead>Total Hours</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {monthRecords.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{format(new Date(r.date), 'MMM dd')}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.status === 'present' ? 'default' : r.status === 'absent' ? 'secondary' : 'outline'}>
+                          {r.is_late && r.status === 'present' ? 'Late' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {r.check_in_time ? format(new Date(r.check_in_time), 'HH:mm') : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        {r.check_out_time ? format(new Date(r.check_out_time), 'HH:mm') : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>{r.total_hours ? `${r.total_hours}h` : '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
